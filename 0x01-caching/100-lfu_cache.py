@@ -18,9 +18,7 @@ class LFUCache(BaseCaching):
         """
         super().__init__()
         self.order = []
-        self.freq = {
-            i: 0 for i in range(0, BaseCaching.MAX_ITEMS)
-        }
+        self.freq = {}
 
     def put(self, key, item):
         """
@@ -33,33 +31,28 @@ class LFUCache(BaseCaching):
                 self.cache_data[key] = item
                 self.order.remove(key)
                 self.order.append(key)
-                keys_list = list(self.cache_data.keys())
-                index = keys_list.index(key)
-                self.freq[index] += 1
+                self.freq[key] += 1
             else:
                 if len(self.cache_data) >= BaseCaching.MAX_ITEMS:
                     min_key = min(self.freq, key=self.freq.get)
                     min_value = self.freq[min_key]
-                    del_key = list(self.cache_data.keys())[min_key]
-                    
-                    keys_min_value = [key for key, value in self.freq.items() if value == min_value]
-                    if len(keys_min_value) > 1:
-                        inx_list = [self.order[key] for key in keys_min_value]
-                        min_index = min(inx_list)
-                        keys_list = list(self.cache_data.keys())
-                        index_key = keys_list.index(min_index)
-                        self.order.remove(min_index)
-                        self.cache_data.pop(min_index)
-                        print(f"DISCARD: {min_index}")
+                    keys_with_min_value = [key for key, value in self.freq.items() if value == min_value]
+                    if len(keys_with_min_value) > 1:
+                        min_indx = min([self.order.index(key) for key in keys_with_min_value])
+                        min_key = self.order[min_indx]
+                        self.freq.pop(min_key)
+                        self.cache_data.pop(min_key)
+                        self.order.remove(min_key)
+                        print(f"DISCARD: {min_key}")
                     else:
-                        self.cache_data.pop(del_key)
-                        print(f"DISCARD: {del_key}")
+                        self.freq.pop(min_key)
+                        self.cache_data.pop(min_key)
+                        self.order.remove(min_key)
+                        print(f"DISCARD: {min_key}")
 
                 self.cache_data[key] = item
                 self.order.append(key)
-                keys_list = list(self.cache_data.keys())
-                index = keys_list.index(key)
-                self.freq[index] += 1
+                self.freq[key] = 1
 
     def get(self, key):
         """
@@ -70,9 +63,7 @@ class LFUCache(BaseCaching):
             if self.cache_data.get(key, None) is not None:
                 self.order.remove(key)
                 self.order.append(key)
-                keys_list = list(self.cache_data.keys())
-                index = keys_list.index(key)
-                self.freq[index] += 1
+                self.freq[key] += 1
                 return self.cache_data.get(key, None)
         else:
             return None
